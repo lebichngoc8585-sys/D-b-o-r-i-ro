@@ -103,7 +103,7 @@ with st.sidebar:
 # ==============================================================================
 # STEP 4: HEADER & ĐIỀU PHỐI TRẠNG THÁI (THÀNH PHẦN 2)
 # ==============================================================================
-st.title("📊 Ứng dụng Học máy chuyển đổi từ Notebook")
+st.title("📊 Hệ thống học máy phát hiện giao dịch gian lận Agribank")
 st.caption("Ứng dụng hỗ trợ nạp dữ liệu, phân tích khám phá, huấn luyện tự động và dự báo trực tiếp dựa trên kiến trúc pipeline chuẩn hóa.")
 
 if uploaded_file is None:
