@@ -5,7 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 import io
 
-# Thư viện Machine Learning (Thay đổi tùy theo Notebook của bạn)
+# Thư viện Machine Learning
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
@@ -21,7 +21,7 @@ from sklearn.metrics import (
 # ==============================================================================
 st.set_page_config(
     layout="wide",
-    page_title="Hệ thống Huấn luyện & Dự báo ML Tự động",
+    page_title="Hệ thống học máy phát hiện giao dịch gian lận",
     page_icon="🤖"
 )
 
@@ -95,7 +95,7 @@ with st.sidebar:
 # ==============================================================================
 # STEP 4: HEADER & ĐIỀU PHỐI TRẠNG THÁI (THÀNH PHẦN 2)
 # ==============================================================================
-st.title("📊 Ứng dụng Web Học máy chuyển đổi từ Notebook")
+st.title("📊 Hệ thống học máy phát hiện giao dịch gian lận")
 st.caption("Ứng dụng hỗ trợ nạp dữ liệu, phân tích khám phá, huấn luyện tự động và dự báo trực tiếp dựa trên kiến trúc pipeline chuẩn hóa.")
 
 if uploaded_file is None:
@@ -176,217 +176,3 @@ if trigger_train:
             st.session_state['metrics'] = metrics_results
             st.session_state['x_columns'] = x_columns
             st.session_state['numeric_features'] = numeric_features
-            st.session_state['categorical_features'] = categorical_features
-            
-            st.success("🎉 Huấn luyện mô hình thành công! Hãy chuyển sang các Tab kết quả bên dưới để kiểm tra.")
-            
-        except Exception as e:
-            st.error(f"❌ Quá trình huấn luyện gặp lỗi cấu hình dữ liệu: {str(e)}")
-
-# ==============================================================================
-# STEP 6: CHIA CHỨC NĂNG THEO TABS RA VÙNG CHÍNH
-# ==============================================================================
-tabs = st.tabs([
-    "📋 Tổng quan dữ liệu", 
-    "📊 Trực quan hóa", 
-    "🎯 Kết quả huấn luyện & Kiểm định", 
-    "🔮 Sử dụng mô hình dự báo"
-])
-
-# ------------------------------------------------------------------------------
-# TAB 1: TỔNG QUAN DỮ LIỆU (Đã được cập nhật phần in đậm và tô màu xanh dương)
-# ------------------------------------------------------------------------------
-with tabs[0]:
-    st.subheader("📌 Chỉ số cấu trúc file")
-    
-    # Thiết lập hệ thống cột hiển thị chỉ số cấu trúc file
-    m1, m2, m3 = st.columns(3)
-    
-    # Định dạng chuỗi số và gán mã màu xanh dương (#0066CC) kết hợp thẻ đậm 🧩
-    val_rows = f"<span style='color:#0066CC; font-size:38px; font-weight:bold;'>{df.shape[0]:,}</span>"
-    val_cols = f"<span style='color:#0066CC; font-size:38px; font-weight:bold;'>{df.shape[1]}</span>"
-    val_size = f"<span style='color:#0066CC; font-size:38px; font-weight:bold;'>{uploaded_file.size / (1024*1024):.2f} MB</span>"
-    
-    with m1:
-        st.caption("Số lượng dòng (Records)")
-        st.markdown(val_rows, unsafe_allow_html=True)
-    with m2:
-        st.caption("Số lượng cột (Features)")
-        st.markdown(val_cols, unsafe_allow_html=True)
-    with m3:
-        st.caption("Dung lượng tệp bộ nhớ")
-        st.markdown(val_size, unsafe_allow_html=True)
-        
-    st.write("### 🔍 Xem trước 5 hàng dữ liệu đầu tiên (Head)")
-    st.dataframe(df.head(5), use_container_width=True)
-    
-    st.write("### 📈 Thống kê mô tả các biến mô hình")
-    st.dataframe(df[x_columns + [y_column]].describe(include='all').T, use_container_width=True)
-
-# ------------------------------------------------------------------------------
-# TAB 2: TRỰC QUAN HÓA DỮ LIỆU
-# ------------------------------------------------------------------------------
-with tabs[1]:
-    st.subheader("🎨 Phân tích trực quan các biến đặc trưng")
-    viz_features = st.multiselect("Chọn các biến muốn trực quan hóa (Hệ thống tự động nhận diện kiểu đồ thị)", 
-                                  options=[y_column] + x_columns, 
-                                  default=([y_column] + x_columns[:3])[:4])
-    
-    if not viz_features:
-        st.warning("Vui lòng chọn ít nhất một biến để hiển thị đồ thị.")
-    else:
-        cols = st.columns(2)
-        for idx, col_name in enumerate(viz_features):
-            current_col = cols[idx % 2]
-            with current_col:
-                st.write(f"**Biến: {col_name}** {'*(Mục tiêu)*' if col_name == y_column else ''}")
-                
-                if df[col_name].dtype in ['int64', 'float64']:
-                    fig = px.histogram(df, x=col_name, marginal="box", nbins=30, color_discrete_sequence=['#4A90E2'])
-                else:
-                    counts = df[col_name].value_counts().reset_index()
-                    fig = px.bar(counts, x=counts.columns[0], y=counts.columns[1], color_discrete_sequence=['#50E3C2'])
-                
-                fig.update_layout(height=300, margin=dict(l=20, r=20, t=20, b=20))
-                st.plotly_chart(fig, use_container_width=True)
-            
-            if idx % 2 == 1 and idx < len(viz_features) - 1:
-                st.divider()
-
-# ------------------------------------------------------------------------------
-# TAB 3: KẾT QUẢ HUẤN LUYỆN
-# ------------------------------------------------------------------------------
-with tabs[2]:
-    st.subheader("🎯 Đánh giá hiệu năng chi tiết của Mô hình")
-    
-    if 'trained_pipeline' not in st.session_state:
-        st.info("💡 Vui lòng cấu hình tham số ở Sidebar bên trái và bấm nút **[🚀 Huấn luyện Mô hình]** để xem kết quả phân tích tại đây.")
-    else:
-        res = st.session_state['metrics']
-        
-        if res['type'] == 'classification':
-            c1, c2, c3, c4 = st.columns(4)
-            c1.metric("Độ chính xác (Accuracy)", f"{res['accuracy']:.4f}")
-            c2.metric("Precision (Weighted)", f"{res['precision']:.4f}")
-            c3.metric("Recall (Weighted)", f"{res['recall']:.4f}")
-            c4.metric("F1-Score (Weighted)", f"{res['f1']:.4f}")
-            
-            st.divider()
-            
-            cc1, cc2 = st.columns([1, 1])
-            with cc1:
-                st.write("#### 🧩 Ma trận nhầm lẫn (Confusion Matrix)")
-                fig_cm = px.imshow(res['cm'], text_auto=True, color_continuous_scale='Blues',
-                                   labels=dict(x="Nhãn Dự Đoán", y="Nhãn Thực Tế"))
-                st.plotly_chart(fig_cm, use_container_width=True)
-            with cc2:
-                st.write("#### 📝 Báo cáo phân loại chi tiết (Classification Report)")
-                report_df = pd.DataFrame(res['report']).transpose()
-                st.dataframe(report_df.style.background_gradient(cmap='Greens', subset=['precision','recall','f1-score']), use_container_width=True)
-                
-        elif res['type'] == 'regression':
-            r1, r2, r3 = st.columns(3)
-            r1.metric("Hệ số xác định R² Score", f"{res['r2']:.4f}")
-            r2.metric("Lỗi bình phương trung bình (RMSE)", f"{res['rmse']:.4f}")
-            r3.metric("Sai số tuyệt đối trung bình (MAE)", f"{res['mae']:.4f}")
-            
-            st.divider()
-            
-            st.write("#### 📉 Đồ thị so sánh Giá trị Thực tế vs Dự báo")
-            fig_reg = go.Figure()
-            fig_reg.add_trace(go.Scatter(x=res['y_test'], y=res['y_pred'], mode='markers', name='Dữ liệu test', marker=dict(color='#9013FE')))
-            min_val = min(min(res['y_test']), min(res['y_pred']))
-            max_val = max(max(res['y_test']), max(res['y_pred']))
-            fig_reg.add_trace(go.Scatter(x=[min_val, max_val], y=[min_val, max_val], mode='lines', name='Đường lý tưởng 1:1', line=dict(dash='dash', color='red')))
-            fig_reg.update_layout(xaxis_title="Giá trị Thực tế", yaxis_title="Giá trị Mô hình dự báo", height=400)
-            st.plotly_chart(fig_reg, use_container_width=True)
-
-# ------------------------------------------------------------------------------
-# TAB 4: SỬ DỤNG MÔ HÌNH DỰ BÁO
-# ------------------------------------------------------------------------------
-with tabs[3]:
-    st.subheader("🔮 Triển khai chấm điểm dữ liệu trực tuyến")
-    
-    if 'trained_pipeline' not in st.session_state:
-        st.info("💡 Vui lòng huấn luyện mô hình thành công trước khi sử dụng tính năng dự báo thực tế.")
-    else:
-        pipeline = st.session_state['trained_pipeline']
-        saved_x_cols = st.session_state['x_columns']
-        saved_num_feats = st.session_state['numeric_features']
-        saved_cat_feats = st.session_state['categorical_features']
-        
-        mode = st.radio("Chọn phương thức nhập đầu vào:", options=["Nhập thông số trực tiếp qua Form", "Tập dữ liệu kiểm tra hàng loạt (.csv/.xlsx)"])
-        
-        if mode == "Nhập thông số trực tiếp qua Form":
-            st.write("### 📝 Điền các thông số đầu vào")
-            with st.form("single_prediction_form"):
-                form_cols = st.columns(2)
-                input_data = {}
-                
-                for i, col in enumerate(saved_x_cols):
-                    col_container = form_cols[i % 2]
-                    with col_container:
-                        if col in saved_num_feats:
-                            min_v = float(df[col].min())
-                            max_v = float(df[col].max())
-                            mean_v = float(df[col].median())
-                            input_data[col] = st.number_input(f"Nhập {col}", min_value=min_v, max_value=max_v, value=mean_v)
-                        elif col in saved_cat_feats:
-                            unique_options = df[col].dropna().unique().tolist()
-                            input_data[col] = st.selectbox(f"Chọn {col}", options=unique_options)
-                
-                submit_pred = st.form_submit_button("💥 Thực hiện Dự báo", type="primary", use_container_width=True)
-                
-            if submit_pred:
-                single_df = pd.DataFrame([input_data])
-                prediction = pipeline.predict(single_df)[0]
-                
-                st.success("### 🎉 Kết quả dự báo của hệ thống AI:")
-                if hasattr(pipeline['model'], "predict_proba") and 'classification' in st.session_state['metrics']['type']:
-                    prob = pipeline.predict_proba(single_df)[0]
-                    class_idx = list(pipeline['model'].classes_).index(prediction)
-                    st.metric(label=f"Nhãn lớp dự báo ({y_column})", value=str(prediction))
-                    st.info(f"Độ tin cậy xác suất tương ứng: **{prob[class_idx]*100:.2f}%**")
-                else:
-                    st.metric(label=f"Giá trị dự báo đầu ra ({y_column})", value=f"{prediction:,.4f}" if isinstance(prediction, (int, float)) else str(prediction))
-
-        else:
-            st.write("### 📁 Tải tệp chứa danh sách dữ liệu mới cần dự báo")
-            st.caption("⚠️ Yêu cầu: File tải lên bắt buộc phải chứa đầy đủ các cột thuộc tính đầu vào sau:")
-            st.code(", ".join(saved_x_cols))
-            
-            batch_file = st.file_uploader("Chọn file dữ liệu kiểm tra mới", type=["csv", "xlsx"], key="batch_uploader")
-            
-            if batch_file is not None:
-                if batch_file.name.endswith('.csv'):
-                    batch_df = pd.read_csv(batch_file)
-                else:
-                    batch_df = pd.read_excel(batch_file)
-                    
-                missing_cols = [col for col in saved_x_cols if col not in batch_df.columns]
-                
-                if missing_cols:
-                    st.error(f"❌ Cấu trúc File không khớp! Tệp của bạn đang thiếu các cột bắt buộc sau: {missing_cols}")
-                else:
-                    with st.spinner("Đang xử lý dự báo hàng loạt..."):
-                        X_batch = batch_df[saved_x_cols]
-                        batch_preds = pipeline.predict(X_batch)
-                        
-                        result_df = batch_df.copy()
-                        result_df[f'AI_Predicted_{y_column}'] = batch_preds
-                        
-                        st.success("✅ Đã xử lý xong toàn bộ dữ liệu mẫu!")
-                        st.write("#### 📋 Xem trước bảng dữ liệu kết quả:")
-                        st.dataframe(result_df, use_container_width=True)
-                        
-                        csv_buffer = io.StringIO()
-                        result_df.to_csv(csv_buffer, index=False, encoding='utf-8-sig')
-                        csv_bytes = csv_buffer.getvalue().encode('utf-8-sig')
-                        
-                        st.download_button(
-                            label="📥 Tải xuống tệp kết quả dự báo toàn bộ (.CSV)",
-                            data=csv_bytes,
-                            file_name=f"AI_Predictions_Result_{batch_file.name.split('.')[0]}.csv",
-                            mime="text/csv",
-                            use_container_width=True
-                        )
