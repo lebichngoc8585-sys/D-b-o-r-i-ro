@@ -21,7 +21,7 @@ from sklearn.metrics import (
 # ==============================================================================
 st.set_page_config(
     layout="wide",
-    page_title="Hệ thống học máy phát hiện giao dịch gian lận",
+    page_title="Hệ thống học máy phát hiện giao dịch gian lận tại Agribank",
     page_icon="🤖"
 )
 
@@ -95,7 +95,7 @@ with st.sidebar:
 # ==============================================================================
 # STEP 4: HEADER & ĐIỀU PHỐI TRẠNG THÁI (THÀNH PHẦN 2)
 # ==============================================================================
-st.title("📊 Hệ thống học máy phát hiện giao dịch gian lận")
+st.title("📊 Hệ thống học máy phát hiện giao dịch gian lận tại Agribank")
 st.caption("Ứng dụng hỗ trợ nạp dữ liệu, phân tích khám phá, huấn luyện tự động và dự báo trực tiếp dựa trên kiến trúc pipeline chuẩn hóa.")
 
 if uploaded_file is None:
